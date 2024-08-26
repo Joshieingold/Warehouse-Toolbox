@@ -93,7 +93,7 @@ def MakeModemSheet(device):
         formatted_list.append(device)
         
         # Get the next 10 strings (or fewer if at the end of the list)
-        chunk = serials_list[i:i+8]
+        chunk = serials_list[i:i+5]
         # Reverse the chunk
         chunk.reverse()
         # Add the reversed chunk to the formatted list
