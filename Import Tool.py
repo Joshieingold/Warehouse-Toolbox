@@ -221,15 +221,15 @@ def CreateGUI():
 
     # Create a frame for the navigation bar
     nav_bar = tk.Frame(root, bg='red')
-    nav_bar.pack(fill=tk.X, padx=10, pady=10)
+    nav_bar.pack(fill=tk.X, padx=12, pady=12)
 
     global selected_file_label, serials_text, count_label
 
     # Load icons
-    select_icon = PhotoImage(file="Excel Icon.png")  # Replace with your icon path
-    start_icon = PhotoImage(file="Rogers Icon.png")    # Replace with your icon path
-    barcodes_icon = PhotoImage(file="Barcode Icon.png")  # Replace with your icon path
-    purolator_icon = PhotoImage(file="Puro Icon.png")  # Replace with your icon path
+    select_icon = PhotoImage(file="Excel Icon.png")  
+    start_icon = PhotoImage(file="Rogers Icon.png")    
+    barcodes_icon = PhotoImage(file="Barcode Icon.png")  
+    purolator_icon = PhotoImage(file="Puro Icon.png")  
 
     # File selection button with icon
     select_button = tk.Button(nav_bar, image=select_icon, command=OpenExcel, bg='red', borderwidth=0)
