@@ -18,7 +18,7 @@ remaining_serials = 0
 notepad_path = "C:\\BTAutomation\\barcodes.txt"
 count_label = str(0)
 OUTPUT_PATH = Path(__file__).parent
-ASSETS_PATH = OUTPUT_PATH / Path(r"C:\Users\jessi\OneDrive\Documents\Projects\Rogers Import Tool")
+ASSETS_PATH = OUTPUT_PATH / Path(r#"Maybe you need your PATH to the images here, dont think so tho")
 
 
 def relative_to_assets(path: str) -> Path:
@@ -224,7 +224,7 @@ button_1 = Button(
     image=button_image_1,
     borderwidth=0,
     highlightthickness=0,
-    command=OpenExcel,  # Connects to OpenExcel function
+    command=OpenExcel,  
     relief="flat"
 )
 button_1.place(
