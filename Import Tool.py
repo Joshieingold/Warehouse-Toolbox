@@ -1,3 +1,8 @@
+from pathlib import Path
+
+# from tkinter import *
+# Explicit imports to satisfy Flake8
+from tkinter import Tk, Canvas, Entry, Text, Button, PhotoImage
 import tkinter as tk
 from tkinter import filedialog, messagebox, PhotoImage
 import openpyxl
@@ -5,48 +10,51 @@ import clipboard
 import pyautogui
 import time
 import subprocess
+from pathlib import Path
 
-# Global Variables
 file_path = None
 serials_list = []
 remaining_serials = 0
 notepad_path = "C:\\BTAutomation\\barcodes.txt"
+count_label = str(0)
+OUTPUT_PATH = Path(__file__).parent
+ASSETS_PATH = OUTPUT_PATH / Path(r"C:\Users\jessi\OneDrive\Documents\Projects\Rogers Import Tool")
 
+
+def relative_to_assets(path: str) -> Path:
+    return ASSETS_PATH / Path(path)
+
+
+# Functions (no changes to the original function definitions)
 def OpenExcel():
     global file_path
     file_path = filedialog.askopenfilename(title="Select a File", filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")])
     if file_path:
-        selected_file_label.config(text=f"Selected File: {file_path}")
         LoadSerials(file_path)
+
 
 def LoadSerials(file_path):
     global serials_list, remaining_serials
-    # Tries opening Excel file and gets all data in the fist column and stores it in a list. 
     try:
         wb = openpyxl.load_workbook(file_path)
         sheet = wb.active
-        serials_list.clear()  # Clear existing serials
+        serials_list.clear()
 
-        # Start iterating from the first row
         for row in sheet.iter_rows(min_row=1, max_row=sheet.max_row):
-            # Gets all data in the first column, as long as it is not empty
             if row[0].value is not None:
                 serials_list.append(str(row[0].value))
 
-        remaining_serials = int(len(serials_list))
+        remaining_serials = len(serials_list)
         UpdateSerialsDisplay()
-    
-    # If the Excel fails to load you recieve an error.
+
     except Exception as e:
         messagebox.showerror("Error", f"Failed to load serials: {e}")
 
-# Displays the amount of serials the user has loaded.
 def UpdateSerialsDisplay():
     serials_text.delete(1.0, tk.END)
     serials_text.insert(tk.END, "\n".join(serials_list))
     count_label.config(text=f"{remaining_serials} Serials Loaded")
 
-# Pastes the serials in the order they were recieved from the excel until finished.
 def PasteSerials():
     global remaining_serials
     if not serials_list:
@@ -55,65 +63,53 @@ def PasteSerials():
 
     time.sleep(5)  # Allow time for the user to focus on the target program
 
-    # Iterate over the serials list by creating a copy to avoid modification during iteration
-    for serial in serials_list[:]:  
+    for serial in serials_list[:]:
         if serial is not None:
-            print(f"Pasting serial: {serial}")  # Debugging statement to track progress
             clipboard.copy(serial)
             pyautogui.hotkey("ctrl", "v")
             pyautogui.hotkey("down")
             serials_list.remove(serial)
             remaining_serials -= 1
             UpdateSerialsDisplay()
-            time.sleep(0.5)  # Small delay between actions
-        else:
-            print("There are no serials loaded")  # Debugging statement to track None values
+            time.sleep(0.5)
+
 
 def MakeTVSheet(device):
     total_strings = len(serials_list)
     formatted_list = []
 
     for i in range(0, total_strings, 10):
-        # Add device name at the beginning of each chunk.
         formatted_list.append(device)
-        # Get the next 10 serials in our list of serials.
-        chunk = serials_list[i:i+10]
-        # Reverse the chunk
+        chunk = serials_list[i:i + 10]
         chunk.reverse()
-        # Add the reversed chunk to the formatted list
         formatted_list.extend(chunk)
-    
+
     return '\n'.join(formatted_list)
 
-# Helper Function for MakeModemSheet, it reverses the serials every 5 to compensate for box placement.
+
 def ReverseForModems():
     total_strings = len(serials_list)
     reversed_modems = []
-    for i in range(0, total_strings, 5):  
-        chunk = serials_list[i:i + 5][::-1]  
+    for i in range(0, total_strings, 5):
+        chunk = serials_list[i:i + 5][::-1]
         reversed_modems.extend(chunk)
     return reversed_modems
 
-# This takes the reversed list from our helper function and adds the device name after every 8 devices.
+
 def MakeModemSheet(device):
     working_modems = ReverseForModems()
     total_strings = len(serials_list)
     formatted_list = []
 
     for i in range(0, total_strings, 8):
-        # Add device name at the beginning of each chunk
         formatted_list.append(device)
-        
-        # Get the next 8 serials
-        chunk = working_modems[i:i+8]
-        # Add the reversed chunk to the formatted list
+        chunk = working_modems[i:i + 8]
         formatted_list.extend(chunk)
-    
+
     return '\n'.join(formatted_list)
 
-# Creates Purolator sheets formatted based on the device.
+
 def CreatePurolatorSheet():
-    # Finds the device name based on the initals of the first scanned item.
     global serials_list
     device = ""
     if serials_list[0][0] == "T" and serials_list[0][1] == "M":
@@ -128,37 +124,23 @@ def CreatePurolatorSheet():
         device = "CGM4331COM"
     else:
         device = "TG4482A"
-    
-    # Decides which way to print the purolator sheet based on the formatting of the devices.
+
     if device in ["IPTVARXI6HD", "IPTVTCXI6HD", "SCXI11BEI"]:
         puro_sheet = MakeTVSheet(device)
-        # Clears barcode notepad, then puts the purolator sheet for our function into it.
         with open(notepad_path, 'w') as file:
             file.write(f"{puro_sheet}\n")
-        
-        # writes the script for CMD that will select the proper printer as default and then print the purolator papers for the barcodes.
+
         cmd_script = """
         @echo off
-
-        rem Define the share name of the printer you want to switch to
         set "target_printer=55EXP_Purolator"
-
-        rem Check if the printer with the target share name exists and set it as default
         powershell -Command "Get-WmiObject -Query \\"SELECT * FROM Win32_Printer WHERE ShareName='%target_printer%'\\" | Invoke-WmiMethod -Name SetDefaultPrinter"
-
-        echo Hello! From the Purolator Printer.
-
-        rem Execute BarTender command
         "C:\\Seagull\\BarTender 7.10\\Standard\\bartend.exe" /f=C:\\BTAutomation\\XI6.btw /p /x
         """
-        
-        # Writes the command to a temporary batch file
+
         with open("temp_cmd.bat", "w") as bat_file:
             bat_file.write(cmd_script)
-            
-        # Executes the batch file
-        result = subprocess.run(["cmd.exe", "/c", "temp_cmd.bat"])
 
+        subprocess.run(["cmd.exe", "/c", "temp_cmd.bat"])
 
     else:
         puro_sheet = MakeModemSheet(device)
@@ -166,104 +148,191 @@ def CreatePurolatorSheet():
             file.write(f"{puro_sheet}\n")
         cmd_script = """
         @echo off
-
-        rem Define the share name of the printer you want to switch to
         set "target_printer=55EXP_Purolator"
-
-        rem Check if the printer with the target share name exists and set it as default
         powershell -Command "Get-WmiObject -Query \\"SELECT * FROM Win32_Printer WHERE ShareName='%target_printer%'\\" | Invoke-WmiMethod -Name SetDefaultPrinter"
-
-        echo Hello! From the Purolator Printer.
-
-        rem Execute BarTender command
         "C:\\Seagull\\BarTender 7.10\\Standard\\bartend.exe" /f=C:\\BTAutomation\\CODA.btw /p /x
         """
-        # Writes the command to a temporary batch file
         with open("temp_cmd.bat", "w") as bat_file:
             bat_file.write(cmd_script)
-            
-        # Executes the batch file
-        result = subprocess.run(["cmd.exe", "/c", "temp_cmd.bat"])
 
-# Clears the notepad file and appends all serials, then runs CMD command
+        subprocess.run(["cmd.exe", "/c", "temp_cmd.bat"])
+
+
 def CreateBarcodes():
-    
-    # Clears the notepad file
     with open(notepad_path, 'w') as file:
         for serial in serials_list:
             file.write(f"{serial}\n")
 
-    # Execute CMD commands for changing to the right printer and printing barcodes for every serial.
     cmd_script = """
     @echo off
-    rem Define the share name of the printer you want to switch to
     set "target_printer=55EXP_Barcode"
-        
-    rem Check if the printer with the target share name exists and set it as default
     powershell -Command "Get-WmiObject -Query \\"SELECT * FROM Win32_Printer WHERE ShareName='%target_printer%'\\" | Invoke-WmiMethod -Name SetDefaultPrinter"
-    
-    rem Execute BarTender command
     "C:\\Seagull\\BarTender 7.10\\Standard\\bartend.exe" /f=C:\\BTAutomation\\singlebar.btw /p /x
     """
-        
-    # Writes the command to a temporary batch file
+
     with open("temp_cmd.bat", "w") as bat_file:
         bat_file.write(cmd_script)
-        
-    # Executes the batch file
-    result = subprocess.run(["cmd.exe", "/c", "temp_cmd.bat"])
 
-# Creates the GUI for the application
-def CreateGUI():
-    root = tk.Tk()
-    root.title("Rogers Import Tool")
-    root.configure(bg='black')
+    subprocess.run(["cmd.exe", "/c", "temp_cmd.bat"])
 
-    # Create a frame for the navigation bar
-    nav_bar = tk.Frame(root, bg='red')
-    nav_bar.pack(fill=tk.X, padx=12, pady=12)
 
-    global selected_file_label, serials_text, count_label
 
-    # Load icons
-    select_icon = PhotoImage(file="Excel Icon.png")  
-    start_icon = PhotoImage(file="Rogers Icon.png")    
-    barcodes_icon = PhotoImage(file="Barcode Icon.png")  
-    purolator_icon = PhotoImage(file="Puro Icon.png")  
 
-    # File selection button with icon
-    select_button = tk.Button(nav_bar, image=select_icon, command=OpenExcel, bg='red', borderwidth=0)
-    select_button.pack(side=tk.LEFT, padx=5)
+OUTPUT_PATH = Path(__file__).parent
+ASSETS_PATH = OUTPUT_PATH / Path(r"C:\Users\jessi\Music\build\assets\frame0")
 
-    # Start button with icon
-    start_button = tk.Button(nav_bar, image=start_icon, command=PasteSerials, bg='red', borderwidth=0)
-    start_button.pack(side=tk.LEFT, padx=5)
 
-    # Clear and append button with icon
-    clear_append_button = tk.Button(nav_bar, image=barcodes_icon, command=CreateBarcodes, bg='red', borderwidth=0)
-    clear_append_button.pack(side=tk.LEFT, padx=5)
+def relative_to_assets(path: str) -> Path:
+    return ASSETS_PATH / Path(path)
 
-    # Purolator button with icon
-    purolator_button = tk.Button(nav_bar, image=purolator_icon, command=CreatePurolatorSheet, bg='red', borderwidth=0)
-    purolator_button.pack(side=tk.LEFT, padx=5)
 
-    # Main content area
-    content_frame = tk.Frame(root, bg='black')
-    content_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+window = Tk()
+window.title("Import Tool")
+window.geometry("350x500")
+window.configure(bg = "#FFFFFF")
 
-    # Selected file label
-    selected_file_label = tk.Label(content_frame, text="No file selected", bg='black', fg='white')
-    selected_file_label.pack(pady=5)
 
-    # Serial numbers display
-    serials_text = tk.Text(content_frame, width=30, height=15, bg='black', fg='white')
-    serials_text.pack(pady=5)
+canvas = Canvas(
+    window,
+    bg = "#FFFFFF",
+    height = 500,
+    width = 350,
+    bd = 0,
+    highlightthickness = 0,
+    relief = "ridge"
+)
 
-    # Remaining count label
-    count_label = tk.Label(content_frame, text="0/0 remaining", bg='black', fg='white')
-    count_label.pack(pady=5)
+canvas.place(x = 0, y = 0)
+canvas.create_rectangle(
+    0.0,
+    0.0,
+    350.0,
+    500.0,
+    fill="#FF1B1F",
+    outline="")
 
-    # Start the Tkinter event loop
-    root.mainloop()
+image_image_1 = PhotoImage(
+    file=relative_to_assets("image_1.png"))
+image_1 = canvas.create_image(
+    81.26589965820312,
+    87.0,
+    image=image_image_1
+)
 
-CreateGUI()
+button_image_1 = PhotoImage(file=relative_to_assets("button_1.png"))
+button_1 = Button(
+    image=button_image_1,
+    borderwidth=0,
+    highlightthickness=0,
+    command=OpenExcel,  # Connects to OpenExcel function
+    relief="flat"
+)
+button_1.place(
+    x=10.1156005859375,
+    y=270.0,
+    width=148.6994171142578,
+    height=42.0
+)
+
+button_image_2 = PhotoImage(
+    file=relative_to_assets("button_2.png"))
+button_2 = Button(
+    image=button_image_2,
+    borderwidth=0,
+    highlightthickness=0,
+    command=CreateBarcodes,
+    relief="flat"
+)
+button_2.place(
+    x=7.0809326171875,
+    y=334.0,
+    width=151.7340850830078,
+    height=42.0
+)
+
+button_image_3 = PhotoImage(
+    file=relative_to_assets("button_3.png"))
+button_3 = Button(
+    image=button_image_3,
+    borderwidth=0,
+    highlightthickness=0,
+    command=PasteSerials,
+    relief="flat"
+)
+button_3.place(
+    x=10.1156005859375,
+    y=206.0,
+    width=144.65318298339844,
+    height=42.0
+)
+
+button_image_4 = PhotoImage(
+    file=relative_to_assets("button_4.png"))
+button_4 = Button(
+    image=button_image_4,
+    borderwidth=0,
+    highlightthickness=0,
+    command=CreatePurolatorSheet,
+    relief="flat"
+)
+button_4.place(
+    x=10.1156005859375,
+    y=398.0,
+    width=148.6994171142578,
+    height=42.0
+)
+
+canvas.create_rectangle(
+    169.94219970703125,
+    0.0,
+    350.0,
+    500.0,
+    fill="#D9D9D9",
+    outline="")
+
+image_image_2 = PhotoImage(
+    file=relative_to_assets("image_2.png"))
+image_2 = canvas.create_image(
+    260.10406494140625,
+    21.0,
+    image=image_image_2
+)
+
+canvas.create_text(
+    212.0,
+    14.0,
+    anchor="nw",
+    text=f"{count_label} Serials Loaded\n",
+    fill="#D9D9D9",
+    font=("Inter Black", 12 * -1)
+)
+
+canvas.create_rectangle(
+    184.10406494140625,
+    40.0,
+    336.8497314453125,
+    491.0,
+    fill="#B5B5B5",
+    outline="")
+
+serials_text = tk.Text(
+    window,
+    height=15,
+    width=40,
+    bg="#F0F0F0"
+)
+serials_text.place(x=336.8497314453125, y=491.0)
+
+count_label = tk.Label(
+    window,
+    text="0 Serials Loaded",
+    bg="#FF1B1F",
+    fg="#FFFFFF",
+    font=("Arial", 8, "bold")
+)
+count_label.place(x=212, y=11)
+serials_text = tk.Text(width=25, height=32, bg='gray90', fg='black',font=("Arial", 8, "bold"))
+serials_text.place(x=183,y=41)
+window.resizable(False, False)
+window.mainloop()
+
