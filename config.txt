@@ -1,7 +1,9 @@
 Josh
 0.5
-C:\Users\jessi\Source\Repos\gui\Josh
-C:\Josh\Daily Bom-Wip1 1.accdb
-C:\\BTAutomation\\barcodes.txt
+Path to folder contaning assets
+Path to Database
+Path to barcodes TXT file
 
 
+1 = Name
+2 = Speed of import
