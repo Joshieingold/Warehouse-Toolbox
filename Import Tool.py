@@ -19,7 +19,7 @@ import datetime
 import getpass
 
 # The path to the config file that controls all other config information.
-config_path = "C:\\Users\\jessi\\Source\\Repos\\gui\\Josh\\config.txt"
+config_path = "PATH TO CONFIG FILE HERE"
 with open(config_path, 'r') as file:
     # Gets all data from the config and stores them in a list for easy and consistent use
     config = file.read().split("\n")
