@@ -1,3 +1,0 @@
-rem @Set /p Labels="How Many Labels Per Sticker:"
-rem @wkix32 C:\BTAutomation\bfix.kix $col=%labels%
-"C:\Seagull\BarTender 7.10\Standard\bartend.exe" /f=C:\BTAutomation\NewPrintertest.btw /p /x
