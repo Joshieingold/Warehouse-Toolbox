@@ -1,0 +1,7 @@
+Josh
+0.5
+C:\Users\jessi\Source\Repos\gui\Josh
+C:\Josh\Daily Bom-Wip1 1.accdb
+C:\\BTAutomation\\barcodes.txt
+
+
