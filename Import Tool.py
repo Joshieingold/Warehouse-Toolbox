@@ -1,10 +1,13 @@
 from pathlib import Path
+
+# from tkinter import *
+# Explicit imports to satisfy Flake8
 from tkinter import Tk, Canvas, Entry, Text, Button, PhotoImage
 from pathlib import Path
 from tkinter import Tk, Canvas, Entry, Text, Button, PhotoImage
 import tkinter as tk
 from tkinter import filedialog, messagebox, PhotoImage
-import openpyxl 
+import openpyxl
 import clipboard
 import pyautogui
 import time
@@ -18,10 +21,8 @@ import subprocess
 import datetime
 import getpass
 
-# The path to the config file that controls all other config information.
-config_path = "PATH TO CONFIG FILE HERE"
+config_path = "c:\\Josh\\config.txt"
 with open(config_path, 'r') as file:
-    # Gets all data from the config and stores them in a list for easy and consistent use
     config = file.read().split("\n")
 
 
@@ -38,12 +39,9 @@ file_path = None
 # Bom-Wip Helper
 def RelativeToAssets(path: str) -> Path:
     return ASSETS_PATH / Path(path)
-# Opens Excels
 def OpenExcel():
     global file_path
-    # Creates a file path that is the selection you choose.
     file_path = filedialog.askopenfilename(title="Select a File", filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")])
-    # If the file path is valid, then its gonna load the serials from it, making this funtion only good for the import tool.
     if file_path:
         LoadSerials(file_path)
 
@@ -65,6 +63,10 @@ def LoadSerials(file_path):
     # If serials are not able to be loaded by the file, this handles the error.
     except Exception as e:
         messagebox.showerror("Error", f"Failed to load serials: {e}")
+def UpdateSerialsDisplay():
+    serials_text.delete(1.0, tk.END)
+    serials_text.insert(tk.END, "\n".join(serials_list))
+    count_label.config(text=f"{remaining_serials} Serials Loaded")
 
 # Deletes all serials in the display and then puts the new ones in seperating them by new lines and updates the GUI of the serial amounts.
 def UpdateSerialsDisplay():
@@ -73,6 +75,16 @@ def UpdateSerialsDisplay():
     count_label.config(text=f"{remaining_serials} Serials Loaded")
 
 # Pastes the serials automatically.
+def CheckPixel():
+        flexLocal = pyautogui.screenshot()
+        colorPixel = (flexLocal.getpixel((50,1012)))
+        whitepixel = (flexLocal.getpixel((50, 1000)))
+        if colorPixel != whitepixel:
+            print(colorPixel)
+            return False
+        else: 
+             return True
+
 def PasteSerials():
     global remaining_serials
     # Handles if there are no serials in our serial list.
@@ -84,14 +96,30 @@ def PasteSerials():
     # For every serial in the list it is pasted and then down arrow is pressed. Serials are then removed and I attempt to make the Gui update to no avail.
     for serial in serials_list[:]:
         if serial is not None:
-            clipboard.copy(serial)
-            pyautogui.hotkey("ctrl", "v")
-            pyautogui.hotkey("down")
-            serials_list.remove(serial)
-            remaining_serials -= 1
-            UpdateSerialsDisplay()
-            # Time between pastes, ideally rounded down as much as possible but oracle is finicy 
-            time.sleep(import_speed)
+            isPixelGood = CheckPixel()
+            while isPixelGood == False:
+                time.sleep(0.75)
+                isPixelGood = CheckPixel()
+            if CheckPixel() == True:    
+                pyautogui.typewrite(serial)
+                time.sleep(0.5)
+                pyautogui.hotkey("tab")
+                serials_list.remove(serial)
+                remaining_serials -= 1
+                UpdateSerialsDisplay()
+                # Time between pastes, ideally rounded down as much as possible but oracle is finicy 
+                time.sleep(import_speed)
+            else:
+                print("Check the import for" + str(serial))
+                time.sleep(2)
+                pyautogui.typewrite(serial)
+                time.sleep(0.5)
+                pyautogui.hotkey("tab")
+                serials_list.remove(serial)
+                remaining_serials -= 1
+                UpdateSerialsDisplay()
+                # Time between pastes, ideally rounded down as much as possible but oracle is finicy 
+                time.sleep(import_speed)
 
 # Formats TV devices by reversing every 10 serials and adding the found device name to the top.
 def MakeTVSheet(device):
@@ -249,7 +277,7 @@ def CreateBarcodes():
         # Insert the user, date, and each serial into the database
         for serial in serials_list:
             if len(serial) >= 2 and serial[0] == "T" and serial[1] == "M":
-                device = "XI6"
+              device = "XI6"
             elif len(serial) >= 1 and serial[0] == "M":
                 device = "XI6"
             elif len(serial) >= 3 and serial[0] == "4" and serial[1] == "0" and serial[2] == "9":
@@ -608,7 +636,7 @@ canvas.create_rectangle(
     fill="#B5B5B5",
     outline="")
 # Places serials into the file.
-serials_text = tk.Text(width=72, height=15, bg='#FFFFFF', fg='black',font=("Aptos Display", 14 * -1, "bold"))
+serials_text = tk.Text(width=82, height=16, bg='#FFFFFF', fg='black',font=("Cabin", 12 * -1, "bold"))
 serials_text.place(x=12,y=90)
 canvas.create_text(
     255.0,
