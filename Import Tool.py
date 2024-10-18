@@ -1,4 +1,7 @@
 from pathlib import Path
+
+# from tkinter import *
+# Explicit imports to satisfy Flake8
 from tkinter import Tk, Canvas, Entry, Text, Button, PhotoImage
 from pathlib import Path
 from tkinter import Tk, Canvas, Entry, Text, Button, PhotoImage
@@ -71,18 +74,21 @@ def UpdateSerialsDisplay():
     serials_text.insert(tk.END, "\n".join(serials_list))
     count_label.config(text=f"{remaining_serials} Serials Loaded")
 
-# Pastes the serials automatically.
+# Helper function for PasteSerials now as FlexiPro requires you to wait for a loading bar to complete.
 def CheckPixel():
-        flexLocal = pyautogui.screenshot()
-        colorPixel = (flexLocal.getpixel((961,1016)))
-        whitepixel = (250, 250, 250)
-        if colorPixel != whitepixel:
+        flexLocal = pyautogui.screenshot() # Takes a screenshot of the lower screen
+        colorPixel = (flexLocal.getpixel((961,1016))) # Gets the color of the loading bar in that screenshot
+        whitepixel = (250, 250, 250) # This is the color of the loading bar when you are able to import a new serial. As such it is the target.
+        if colorPixel != whitepixel: 
+            # If the pixel found is not the color of the target set, then we return false with a statement of what we found, this will make the loop run again in PasteSerials.
             print("Holding serial as loading does not appear done. Color: " + str(flexLocal.getpixel((961,1016))))
             return False
         else: 
+            # If we got the target pixel from our check it will return the color to assure you it went through and make PasteSerials exit the loop.
              print("Looking good, color is: " + str(flexLocal.getpixel((961,1016))))
              return True
-
+        
+# Pastes the serials automatically.
 def PasteSerials():
     global remaining_serials
     # Handles if there are no serials in our serial list.
@@ -91,24 +97,24 @@ def PasteSerials():
         return
     # Allows time for the user to focus on the target program
     time.sleep(5)  
-    # For every serial in the list it is pasted and then down arrow is pressed. Serials are then removed and I attempt to make the Gui update to no avail.
-    start = time.time()
+    start = time.time() # This is the start of the timer for the import time.
     for serial in serials_list[:]:
         if serial is not None:
             isPixelGood = CheckPixel()
-            while isPixelGood == False:
-                time.sleep(0.75)
-                isPixelGood = CheckPixel()
+            while isPixelGood == False: # If the pixel on the loading bar is not our target we run in this loop until the loading bar is percieved as the target color.
+                time.sleep(0.75) # Add some time between screenshots as not to flood the program
+                isPixelGood = CheckPixel() # If the pixel changed to target we will exit the loop and continue. 
             if CheckPixel() == True:    
-                pyautogui.typewrite(serial)
+                pyautogui.typewrite(serial) # Writes the serial.
                 time.sleep(0.5)
-                pyautogui.hotkey("tab")
+                pyautogui.hotkey("tab") # Waits before pressing tab as to give the system a short breather.
                 serials_list.remove(serial)
                 remaining_serials -= 1
                 UpdateSerialsDisplay()
-                # Time between pastes, ideally rounded down as much as possible but oracle is finicy 
+                # Time between pastes, ideally rounded down as much as possible but FlexiPro is hard to estimate, you can customize this in the config.
                 time.sleep(import_speed)
-            else:
+            # Shouldn't be possible to hit this else, but if it does happen, I aired on the side of not losing the serial and instead warning the user that some edge case was found.
+            else: # Same as if true except has warning.
                 print("Check the import for" + str(serial))
                 time.sleep(2)
                 pyautogui.typewrite(serial)
@@ -117,10 +123,9 @@ def PasteSerials():
                 serials_list.remove(serial)
                 remaining_serials -= 1
                 UpdateSerialsDisplay()
-                # Time between pastes, ideally rounded down as much as possible but oracle is finicy 
                 time.sleep(import_speed)
-    end = time.time()
-    print('Import completed in ' + str(round((end - start) / 60, 1)) + "minutes.")
+    end = time.time() # Serials are all imported and as such we grab the ended time.
+    print('Import completed in ' + str(round((end - start) / 60, 1)) + "minutes.") # Prints to the console how long the import took in mins
 
 # Formats TV devices by reversing every 10 serials and adding the found device name to the top.
 def MakeTVSheet(device):
@@ -218,7 +223,7 @@ import subprocess
 import datetime
 import getpass
 
-# Define your database path and connection string
+# Define the database path and connection string
 
 connection_string = r'DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=' + database_path
 
