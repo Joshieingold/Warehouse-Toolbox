@@ -29,6 +29,7 @@ import_speed = float(config[1])
 asset_location = config[2]
 database_path = config[3]
 bartender_notepad = config[4]
+serials_reversed = bool(config[5])
 serials_list = []
 remaining_serials = 0
 file_path = None
@@ -42,6 +43,7 @@ def OpenExcel():
     if file_path:
         LoadSerials(file_path)
 
+    
 # Gets the serials from the Excel file.
 def LoadSerials(file_path):
     global serials_list, remaining_serials
@@ -56,6 +58,8 @@ def LoadSerials(file_path):
                 serials_list.append(str(row[0].value))
         # Gets the amount of serials loaded and updates the display with the function.
         remaining_serials = len(serials_list)
+        if serials_reversed == True:
+            serials_list.reverse() # Reverse the serials to account for FlexiPro!
         UpdateSerialsDisplay()
     # If serials are not able to be loaded by the file, this handles the error.
     except Exception as e:
@@ -479,7 +483,7 @@ def relative_to_assets(path: str) -> Path:
 
 
 window = Tk()
-
+window.title("Rogers Toolbox")
 window.geometry("600x350")
 window.configure(bg = "#FFFFFF")
 
