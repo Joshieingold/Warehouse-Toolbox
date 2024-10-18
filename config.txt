@@ -1,9 +1,10 @@
 Josh
-0.5
-Path to folder contaning assets
+4
+Path to folder containing assets
 Path to Database
 Path to barcodes TXT file
-
+True
 
 1 = Name
 2 = Speed of import
+6 = Invert serial numbers
