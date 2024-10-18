@@ -1,7 +1,4 @@
 from pathlib import Path
-
-# from tkinter import *
-# Explicit imports to satisfy Flake8
 from tkinter import Tk, Canvas, Entry, Text, Button, PhotoImage
 from pathlib import Path
 from tkinter import Tk, Canvas, Entry, Text, Button, PhotoImage
@@ -77,12 +74,13 @@ def UpdateSerialsDisplay():
 # Pastes the serials automatically.
 def CheckPixel():
         flexLocal = pyautogui.screenshot()
-        colorPixel = (flexLocal.getpixel((50,1012)))
-        whitepixel = (flexLocal.getpixel((50, 1000)))
+        colorPixel = (flexLocal.getpixel((961,1016)))
+        whitepixel = (250, 250, 250)
         if colorPixel != whitepixel:
-            print(colorPixel)
+            print("Holding serial as loading does not appear done. Color: " + str(flexLocal.getpixel((961,1016))))
             return False
         else: 
+             print("Looking good, color is: " + str(flexLocal.getpixel((961,1016))))
              return True
 
 def PasteSerials():
@@ -94,6 +92,7 @@ def PasteSerials():
     # Allows time for the user to focus on the target program
     time.sleep(5)  
     # For every serial in the list it is pasted and then down arrow is pressed. Serials are then removed and I attempt to make the Gui update to no avail.
+    start = time.time()
     for serial in serials_list[:]:
         if serial is not None:
             isPixelGood = CheckPixel()
@@ -120,6 +119,8 @@ def PasteSerials():
                 UpdateSerialsDisplay()
                 # Time between pastes, ideally rounded down as much as possible but oracle is finicy 
                 time.sleep(import_speed)
+    end = time.time()
+    print('Import completed in ' + str(round((end - start) / 60, 1)) + "minutes.")
 
 # Formats TV devices by reversing every 10 serials and adding the found device name to the top.
 def MakeTVSheet(device):
