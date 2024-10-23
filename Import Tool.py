@@ -33,6 +33,8 @@ serials_reversed = bool(config[5])
 serials_list = []
 remaining_serials = 0
 file_path = None
+error_serial = []
+good_serial = []
 
 # Bom-Wip Helper
 def RelativeToAssets(path: str) -> Path:
@@ -88,8 +90,60 @@ def CheckPixel():
             # If we got the target pixel from our check it will return the color to assure you it went through and make PasteSerials exit the loop.
              print("Looking good, color is: " + str(flexLocal.getpixel((961,1016))))
              return True
+def CheckPixelSW():
+        flexLocal = pyautogui.screenshot() # Takes a screenshot of the lower screen
+        colorPixel = (flexLocal.getpixel((30,149))) # Gets the color of the loading bar in that screenshot
+        errorColor = (255, 255, 255) # This is the color of the loading bar when you are able to import a new serial. As such it is the target.
+        goodColor = (0, 0, 0)
+        if colorPixel == errorColor:
+            return False
+        elif colorPixel == goodColor:
+             return True
         
 # Pastes the serials automatically.
+def PasteSerialsForSubWip():
+    global remaining_serials
+    # Handles if there are no serials in our serial list.
+    if not serials_list:
+        messagebox.showinfo("Info", "No serials loaded to paste.")
+        return
+    # Allows time for the user to focus on the target program
+    time.sleep(5)  
+    start = time.time() # This is the start of the timer for the import time.
+    error_serial = []
+    good_serial = []
+    for serial in serials_list[:]:
+        if serial is not None:
+            
+            pyautogui.typewrite(serial) # Writes the serial.
+            time.sleep(0.5)
+            pyautogui.hotkey("tab") # Waits before pressing tab as to give the system a short breather.
+            serials_list.remove(serial)
+            remaining_serials -= 1
+            UpdateSerialsDisplay()
+            time.sleep(1)
+            isError = CheckPixelSW() # returns t/f
+                # Time between pastes, ideally rounded down as much as possible but FlexiPro is hard to estimate, you can customize this in the config.
+            if isError == True:
+                print(str(serial) + " Has no error!")
+                good_serial.append(serial)
+            elif isError == False:
+                error_serial.append(serial)
+                time.sleep(0.75)
+                pyautogui.hotkey("ctrl", "x")
+                print(str(serial) + " Had an error and will be saved")
+            time.sleep(0.5)
+            # Shouldn't be possible to hit this else, but if it does happen, I aired on the side of not losing the serial and instead warning the user that some edge case was found.
+    end = time.time() # Serials are all imported and as such we grab the ended time.
+    print('Import completed in ' + str(round((end - start) / 60, 1)) + "minutes.") # Prints to the console how long the import took in mins
+    print("The good serials are:")
+    for j in good_serial:
+        print(j)
+    print("The problematic serials are:")
+    for i in (error_serial):
+        print(i)
+    
+
 def PasteSerials():
     global remaining_serials
     # Handles if there are no serials in our serial list.
@@ -126,7 +180,10 @@ def PasteSerials():
                 UpdateSerialsDisplay()
                 time.sleep(import_speed)
     end = time.time() # Serials are all imported and as such we grab the ended time.
-    print('Import completed in ' + str(round((end - start) / 60, 1)) + "minutes.") # Prints to the console how long the import took in mins
+    print('Import completed in ' + str(round((end - start) / 60, 1)) + " minutes.") # Prints to the console how long the import took in mins
+
+
+
 
 # Formats TV devices by reversing every 10 serials and adding the found device name to the top.
 def MakeTVSheet(device):
@@ -611,16 +668,16 @@ button_6.place(
     height=42.0
 )
 # The run button
-button_image_7 = PhotoImage(
-    file=relative_to_assets("button_7.png"))
-button_7 = Button(
-    image=button_image_7,
+button_image_8 = PhotoImage(
+    file=relative_to_assets("button_8.png"))
+button_8 = Button(
+    image=button_image_8,
     borderwidth=0,
     highlightthickness=0,
     command=lambda: PasteSerials(),
     relief="flat"
 )
-button_7.place(
+button_8.place(
     x=10.0,
     y=5.0,
     width=42.0,
@@ -665,6 +722,22 @@ count_label = tk.Label(
     font=("Arial", 8, "bold")
 )
 count_label.place(x=224, y=60)
+
+button_image_7 = PhotoImage(
+    file=relative_to_assets("button_7.png"))
+button_7 = Button(
+    image=button_image_7,
+    borderwidth=0,
+    highlightthickness=0,
+    command=lambda: PasteSerialsForSubWip(),
+    relief="flat"
+)
+button_7.place(
+    x=235.0,
+    y=5.0,
+    width=42.0,
+    height=42.0
+)
 
 window.resizable(False, False)
 window.mainloop()
