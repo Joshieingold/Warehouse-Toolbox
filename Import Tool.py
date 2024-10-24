@@ -1,3 +1,4 @@
+# Imports
 from pathlib import Path
 from tkinter import Tk, Canvas, Entry, Text, Button, PhotoImage
 from pathlib import Path
@@ -18,10 +19,10 @@ import subprocess
 import datetime
 import getpass
 
+# Getting global variables
 config_path = "c:\\Josh\\config.txt"
 with open(config_path, 'r') as file:
     config = file.read().split("\n")
-
 
 # Global Variables:
 user = config[0]
@@ -44,7 +45,6 @@ def OpenExcel():
     file_path = filedialog.askopenfilename(title="Select a File", filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")])
     if file_path:
         LoadSerials(file_path)
-
     
 # Gets the serials from the Excel file.
 def LoadSerials(file_path):
@@ -66,6 +66,7 @@ def LoadSerials(file_path):
     # If serials are not able to be loaded by the file, this handles the error.
     except Exception as e:
         messagebox.showerror("Error", f"Failed to load serials: {e}")
+
 def UpdateSerialsDisplay():
     serials_text.delete(1.0, tk.END)
     serials_text.insert(tk.END, "\n".join(serials_list))
@@ -78,7 +79,7 @@ def UpdateSerialsDisplay():
     count_label.config(text=f"{remaining_serials} Serials Loaded")
 
 # Helper function for PasteSerials now as FlexiPro requires you to wait for a loading bar to complete.
-def CheckPixel():
+def CheckPixelFlexiPro():
         flexLocal = pyautogui.screenshot() # Takes a screenshot of the lower screen
         colorPixel = (flexLocal.getpixel((961,1016))) # Gets the color of the loading bar in that screenshot
         whitepixel = (250, 250, 250) # This is the color of the loading bar when you are able to import a new serial. As such it is the target.
@@ -90,18 +91,18 @@ def CheckPixel():
             # If we got the target pixel from our check it will return the color to assure you it went through and make PasteSerials exit the loop.
              print("Looking good, color is: " + str(flexLocal.getpixel((961,1016))))
              return True
-def CheckPixelSW():
+def CheckPixelWMS():
         flexLocal = pyautogui.screenshot() # Takes a screenshot of the lower screen
         colorPixel = (flexLocal.getpixel((30,149))) # Gets the color of the loading bar in that screenshot
         errorColor = (255, 255, 255) # This is the color of the loading bar when you are able to import a new serial. As such it is the target.
         goodColor = (0, 0, 0)
         if colorPixel == errorColor:
-            return False
+            return True
         elif colorPixel == goodColor:
-             return True
+             return False
         
-# Pastes the serials automatically.
-def PasteSerialsForSubWip():
+# Pastes the serials automatically for WMS.
+def PasteSerialsWMS():
     global remaining_serials
     # Handles if there are no serials in our serial list.
     if not serials_list:
@@ -122,29 +123,32 @@ def PasteSerialsForSubWip():
             remaining_serials -= 1
             UpdateSerialsDisplay()
             time.sleep(1)
-            isError = CheckPixelSW() # returns t/f
-                # Time between pastes, ideally rounded down as much as possible but FlexiPro is hard to estimate, you can customize this in the config.
-            if isError == True:
+            isError = CheckPixelWMS() # returns t/f
+            if isError == False: # If there is no error, you can continue pasting. After sorting the serial
                 print(str(serial) + " Has no error!")
                 good_serial.append(serial)
-            elif isError == False:
+            elif isError == True: # If there is an error you need to wait for the box to update, press ctrl + x and save the serial
                 error_serial.append(serial)
                 time.sleep(0.75)
                 pyautogui.hotkey("ctrl", "x")
                 print(str(serial) + " Had an error and will be saved")
             time.sleep(0.5)
-            # Shouldn't be possible to hit this else, but if it does happen, I aired on the side of not losing the serial and instead warning the user that some edge case was found.
     end = time.time() # Serials are all imported and as such we grab the ended time.
+    
+    # Prints the time the import took into the console
     print('Import completed in ' + str(round((end - start) / 60, 1)) + "minutes.") # Prints to the console how long the import took in mins
+    
+    # Prints the serials that did not have errors
     print("The good serials are:")
     for j in good_serial:
         print(j)
+    # Prints the serials that did have errors
     print("The problematic serials are:")
     for i in (error_serial):
         print(i)
     
 
-def PasteSerials():
+def PasteSerialsFlexi():
     global remaining_serials
     # Handles if there are no serials in our serial list.
     if not serials_list:
@@ -155,11 +159,11 @@ def PasteSerials():
     start = time.time() # This is the start of the timer for the import time.
     for serial in serials_list[:]:
         if serial is not None:
-            isPixelGood = CheckPixel()
+            isPixelGood = CheckPixelFlexiPro()
             while isPixelGood == False: # If the pixel on the loading bar is not our target we run in this loop until the loading bar is percieved as the target color.
                 time.sleep(0.75) # Add some time between screenshots as not to flood the program
-                isPixelGood = CheckPixel() # If the pixel changed to target we will exit the loop and continue. 
-            if CheckPixel() == True:    
+                isPixelGood = CheckPixelFlexiPro() # If the pixel changed to target we will exit the loop and continue. 
+            if CheckPixelFlexiPro() == True:    
                 pyautogui.typewrite(serial) # Writes the serial.
                 time.sleep(0.5)
                 pyautogui.hotkey("tab") # Waits before pressing tab as to give the system a short breather.
@@ -182,7 +186,27 @@ def PasteSerials():
     end = time.time() # Serials are all imported and as such we grab the ended time.
     print('Import completed in ' + str(round((end - start) / 60, 1)) + " minutes.") # Prints to the console how long the import took in mins
 
-
+def PasteSerialsNormal():
+    global remaining_serials
+    # Handles if there are no serials in our serial list.
+    if not serials_list:
+        messagebox.showinfo("Info", "No serials loaded to paste.")
+        return
+    # Allows time for the user to focus on the target program
+    time.sleep(5)  
+    start = time.time() # This is the start of the timer for the import time.
+    for serial in serials_list[:]:
+        if serial is not None:    
+                pyautogui.typewrite(serial) # Writes the serial.
+                time.sleep(0.25)
+                pyautogui.hotkey("tab") # Waits before pressing tab as to give the system a short breather.
+                serials_list.remove(serial)
+                remaining_serials -= 1
+                UpdateSerialsDisplay()
+                # Time between pastes, ideally rounded down as much as possible but FlexiPro is hard to estimate, you can customize this in the config.
+                time.sleep(0.3)
+    end = time.time() # Serials are all imported and as such we grab the ended time.
+    print('Import completed in ' + str(round((end - start) / 60, 1)) + " minutes.") # Prints to the console how long
 
 
 # Formats TV devices by reversing every 10 serials and adding the found device name to the top.
@@ -569,7 +593,7 @@ canvas.create_rectangle(
     0.0,
     600.0,
     53.0,
-    fill="#FF1B1F",
+    fill="#2D2D2D",
     outline="")
 # The Print to lazer Printer button
 button_image_1 = PhotoImage(
@@ -630,7 +654,7 @@ button_4 = Button(
     relief="flat"
 )
 button_4.place(
-    x=185.0,
+    x=389.0,
     y=5.0,
     width=44.0,
     height=42.0
@@ -646,7 +670,7 @@ button_5 = Button(
     relief="flat"
 )
 button_5.place(
-    x=124.0,
+    x=331.0,
     y=0.0,
     width=46.0,
     height=53.0
@@ -662,8 +686,8 @@ button_6 = Button(
     relief="flat"
 )
 button_6.place(
-    x=67.0,
-    y=5.0,
+    x=12.0,
+    y=6.0,
     width=42.48554992675781,
     height=42.0
 )
@@ -674,14 +698,14 @@ button_8 = Button(
     image=button_image_8,
     borderwidth=0,
     highlightthickness=0,
-    command=lambda: PasteSerials(),
+    command=lambda: PasteSerialsFlexi(),
     relief="flat"
 )
 button_8.place(
-    x=10.0,
+    x=111.0,
     y=5.0,
-    width=42.0,
-    height=42.0
+    width=53.0,
+    height=44.0
 )
 
 image_image_1 = PhotoImage(
@@ -707,7 +731,7 @@ canvas.create_text(
     64.0,
     anchor="nw",
     text="x Serials Loaded",
-    fill="#D9D9D9",
+    fill="#2D2D2D",
     font=("Cabin", 12 * -1)
 )
 
@@ -717,7 +741,7 @@ count_label = tk.Label(
     width=17,
     height=1,
     text="0 Serials Loaded",
-    bg="#FF1B1F",
+    bg="#2D2D2D",
     fg="#FFFFFF",
     font=("Arial", 8, "bold")
 )
@@ -729,11 +753,11 @@ button_7 = Button(
     image=button_image_7,
     borderwidth=0,
     highlightthickness=0,
-    command=lambda: PasteSerialsForSubWip(),
+    command=lambda: PasteSerialsWMS(),
     relief="flat"
 )
 button_7.place(
-    x=235.0,
+    x=62.0,
     y=5.0,
     width=42.0,
     height=42.0
