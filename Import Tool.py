@@ -198,7 +198,6 @@ def PasteSerialsNormal():
     for serial in serials_list[:]:
         if serial is not None:    
                 pyautogui.typewrite(serial) # Writes the serial.
-                time.sleep(0.25)
                 pyautogui.hotkey("tab") # Waits before pressing tab as to give the system a short breather.
                 serials_list.remove(serial)
                 remaining_serials -= 1
@@ -762,6 +761,20 @@ button_7.place(
     width=42.0,
     height=42.0
 )
-
+button_image_9 = PhotoImage(
+    file=relative_to_assets("button_9.png"))
+button_9 = Button(
+    image=button_image_9,
+    borderwidth=0,
+    highlightthickness=0,
+    command=lambda: PasteSerialsNormal(),
+    relief="flat"
+)
+button_9.place(
+    x=170.0,
+    y=5.0,
+    width=42.0,
+    height=42.0
+)
 window.resizable(False, False)
 window.mainloop()
