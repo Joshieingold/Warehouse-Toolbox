@@ -411,112 +411,132 @@ def process_file(file_path):
     except Exception as e:
         count_label.config(text=f"Error: {str(e)}")
 
-# Does the algorithmic work for the actual program.
+# Updated list of devices for CTR contractors
+ctr_devices = [
+    "XB8", "XB7", "XI6", "XIONE", "PODS", "ONTS",
+    "SCHB1AEW", "SCHC2AEW", "SCHC3AEW", "XIONE - ENTOS",
+    "CODA5810"  # Added CODA5810 for CTR contractors
+]
+
+# Main algorithmic processing for the program
 def process_sheet(sheet):
+    # Contractors and corresponding lists
+    robitaille_lst = ['8017', '8037', '8038', '8041', '8047', '8080', '8093']
+    ctr_lst = ['8052', '8067', '8975', "8986", "8990", "8994", "8997"]
+
+    # Devices to count for each group
+    robitaille_devices = [
+        "XB8", "XB7", "XI6", "XIONE", "PODS", "ONTS",
+        "SCHB1AEW", "SCHC2AEW", "SCHC3AEW", "XIONE - ENTOS",
+        "MR36HW", "S5A134A", "CM8200A", "CODA5810"
+    ]
     
-    # Names of all the CTRS and companys in their correct order so they can be returned in correct order.
-    ctr_lst = ['8009', '8017', '8037', '8038', '8041', '8047', '8052', '8067', '8080', '8093', '8975', "8986", "8990", "8994", "8997"]
-    company_lst = ["NB1", "NF1"]
-    double_ctr_lst = ["8982", "8993"]
-    
-    # Place for all data obtained in the search to be placed and counts for them to be added to for each ideration.
-    data_lst = []
-    combined_totals = {
-        "XB8": 0, "XB7": 0, "XI6": 0, "XIONE": 0, "POD": 0, "ONT": 0, "CAMERA_1": 0, "CAMERA_2": 0, "CAMERA_3": 0
+    ctr_devices = [
+        "XB8", "XB7", "XI6", "XIONE", "PODS", "ONTS",
+        "SCHB1AEW", "SCHC2AEW", "SCHC3AEW", "XIONE - ENTOS",
+        "CODA5810"
+    ]
+
+    # Map item codes to device names
+    device_mapping = {
+        "CGM4981COM": "XB8",
+        "CGM4331COM": "XB7", "TG4482A": "XB7",
+        "IPTVARXI6HD": "XI6", "IPTVTCXI6HD": "XI6",
+        "SCXI11BEI": "XIONE",
+        "XE2SGROG1": "PODS",
+        "XS010XB": "ONTS", "XS010XQ": "ONTS", "XS020XONT": "ONTS",
+        "SCHB1AEW": "SCHB1AEW",
+        "SCHC2AEW": "SCHC2AEW",
+        "SCHC3AE0": "SCHC3AEW",
+        "MR36HW": "MR36HW",
+        "S5A134A": "S5A134A",
+        "CM8200A": "CM8200A",
+        "CODA5810": "CODA5810",
     }
-    combo_totals = combined_totals.copy()
 
-    # Iderates through every CTR name in CTR_lst
+    # Result list
+    data_lst = []
+
+    # Helper function to update totals based on the allowed device list
+    def update_totals(totals, item_code, allowed_devices):
+        if item_code in device_mapping:
+            device = device_mapping[item_code]
+            if device in allowed_devices:
+                totals[device] += 1
+
+    # Process Robitaille contractors (order as per your request)
+    for contractor in robitaille_lst:
+        contractor_totals = {device: 0 for device in robitaille_devices}
+        for row in sheet.iter_rows(min_row=3, max_row=sheet.max_row):
+            contractor_id = str(row[7].value)  # Column H
+            item_code = row[5].value          # Column F
+            inventory_type = str(row[9].value)  # Column J
+
+            if contractor_id == contractor and inventory_type == f"CTR.Subready.{contractor}":
+                update_totals(contractor_totals, item_code, robitaille_devices)
+
+        data_lst.append(format_totals(contractor_totals, robitaille_devices))
+
+    # Process CTR contractors (order as per your request)
     for contractor in ctr_lst:
-        
-        # Gets fresh device key for each CTR, then check every piece of data in row 1 (CTR name)
-        contractor_totals = {key: 0 for key in combined_totals}
-        for row in sheet.iter_rows(min_row=1, max_row=sheet.max_row):
-            
-            # Gets the CTR name, item code, and quantity for every row
-            contractor_id = str(row[1].value)
-            item_code = row[3].value
-            quantity = row[4].value
-            
-            # Checks if quantity is an integer in case some data does not factor. As well as checking if the CTR we are looking for is the one in the selected row, if so then it gets added to our totals.
-            if isinstance(quantity, int) and contractor_id == contractor:
-                update_totals(contractor_totals, item_code, quantity)
-        
-        # Once we have searched all of the snapshot for the specific CTR, that data is appended to our full data lst.
-        data_lst.append(format_totals(contractor_totals))
-    
-    # Does the above process but combines the CTR's that are supposed to be summed and appends to lst. Importantly it's inserted into the correct location of our data lst for pasting later.
-    for team in double_ctr_lst:
-        for row in sheet.iter_rows(min_row=1, max_row=sheet.max_row):
-            contractor_id = str(row[1].value)
-            item_code = row[3].value
-            quantity = row[4].value
+        contractor_totals = {device: 0 for device in ctr_devices}
+        for row in sheet.iter_rows(min_row=3, max_row=sheet.max_row):
+            contractor_id = str(row[7].value)  # Column H
+            item_code = row[5].value          # Column F
+            inventory_type = str(row[9].value)  # Column J
 
-            if isinstance(quantity, int) and contractor_id == team:
-                update_totals(combo_totals, item_code, quantity)
+            if contractor_id == contractor and inventory_type == f"CTR.Subready.{contractor}":
+                update_totals(contractor_totals, item_code, ctr_devices)
 
-    data_lst.insert(13, format_totals(combo_totals))
+        data_lst.append(format_totals(contractor_totals, ctr_devices))
 
-    # Does nearly the same process as aforementioned, but needs to handle data a bit differently.
-    for company in company_lst:
-        company_totals = {key: 0 for key in combined_totals}
-        
-        # Checks all rows in the sheet.
-        for row in sheet.iter_rows(min_row=1, max_row=sheet.max_row):
-            
-            # gets the company name, and if that is the warehouse name we are looking for in the very first row, and it is in one of the effective sub-inventories we are looking for then we continue.
-            company_name = str(row[0].value)
-            if company_name == company and str(row[1].value) in ["S Retail N", "S Retail R", "C Retail N", "C Retail R", "C InTranst"]:
-                
-                # Process is the same as before.
-                item_code = row[3].value
-                quantity = row[4].value
-                if isinstance(quantity, int):
-                    update_totals(company_totals, item_code, quantity)
+    # Combine 8993 and 8982 contractors
+    combined_contractor_totals = {device: 0 for device in ctr_devices}
+    for row in sheet.iter_rows(min_row=3, max_row=sheet.max_row):
+        contractor_id = str(row[7].value)  # Column H
+        item_code = row[5].value          # Column F
+        inventory_type = str(row[9].value)  # Column J
 
-        data_lst.append(format_totals(company_totals))
+        if contractor_id in ["8993", "8982"] and inventory_type in [f"CTR.Subready.8993", f"CTR.Subready.8982"]:
+            update_totals(combined_contractor_totals, item_code, ctr_devices)
 
-    # Just creating a list to iderate through for based on all the data we collected that is associated with the names of the our data.
-    full_list = ctr_lst + ["Combined"] + company_lst
+    data_lst.append(format_totals(combined_contractor_totals, ctr_devices))
 
-    # Runs the automation.
+    # Copy data to Excel with contractor/device names (order will be respected)
+    full_list = robitaille_lst + ctr_lst  # Respect the order
+    full_list = rearrange_lst(full_list, combined_contractor_totals)
     copy_data_to_excel(data_lst, full_list)
 
-# Takes data based on the data lst we are working with for the current CTR, which item it is (so we know where to add it.), and how many items are in the float. 
-def update_totals(totals, item_code, quantity):
-    if item_code == "CGM4981COM":
-        totals["XB8"] += quantity
-    elif item_code in ["CGM4331COM", "TG4482A"]:
-        totals["XB7"] += quantity
-    elif item_code in ["IPTVARXI6HD", "IPTVTCXI6HD"]:
-        totals["XI6"] += quantity
-    elif item_code == "SCXI11BEI":
-        totals["XIONE"] += quantity
-    elif item_code == "XE2SGROG1":
-        totals["POD"] += quantity
-    elif item_code in ["XS010XB", "XS010XQ", "XS020XONT"]:
-        totals["ONT"] += quantity
-    elif item_code == "SCHB1AEW":
-        totals["CAMERA_1"] += quantity
-    elif item_code == "SCHC2AEW":
-        totals["CAMERA_2"] += quantity
-    elif item_code == "SCHC3AE0":
-        totals["CAMERA_3"] += quantity
+# Format totals for Excel output
+def format_totals(totals, device_order):
+    return '\n'.join(str(totals[device]) for device in device_order)
 
-# Converts the data into the format we will be needing to paste in for the excel sheet (1 line per device).
-def format_totals(totals):
-    return '\n'.join(str(totals[key]) for key in ["XB8", "XB7", "XI6", "XIONE", "POD", "ONT", "CAMERA_1", "CAMERA_2", "CAMERA_3"])
+def rearrange_lst(full_list, combined_contractor_totals):
+    # Manually adjust the order of contractors and totals as per your specification
+    # Insert the combined contractor totals at the end
+    full_list.append(combined_contractor_totals)
 
-# Iterates through our formatted data and pastes it in automated fashion.
+    # Example of rearranging list to fit specific order (inserting combined totals into particular positions)
+    # Let's assume you want to insert specific contractor totals at specific places
+
+    # Insert the contractor totals at these positions:
+    full_list.insert(5, full_list[7])
+    full_list.insert(6, full_list[8])
+    full_list.insert(12, full_list[14])
+
+    return full_list
+
+
+
+# Copy data to Excel
 def copy_data_to_excel(data_lst, full_list):
-        for index, data in enumerate(data_lst):
-            clipboard.copy(data)
-            time.sleep(6)  
-            pyautogui.hotkey('ctrl', 'v')
-            if index < len(data_lst) - 1:
-                pyautogui.hotkey("ctrl", "alt", "pagedown")
-                pyautogui.hotkey('ctrl','left')
-
+    for index, data in enumerate(data_lst):
+        clipboard.copy(data)
+        time.sleep(6)  
+        pyautogui.hotkey('ctrl', 'v')
+        if index < len(data_lst) - 1:
+            pyautogui.hotkey("ctrl", "alt", "pagedown")
+            pyautogui.hotkey('ctrl','left')
 
 # XML Converter
 def open_xml_file():
