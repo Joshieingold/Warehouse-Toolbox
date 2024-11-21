@@ -1,5 +1,4 @@
-# NOT WORKING YET BUT WORKING ON IT SOMEDAY
-
+# cancelled prject
 import easyocr
 import time
 import pyautogui
