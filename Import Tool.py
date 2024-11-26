@@ -18,6 +18,10 @@ import pyodbc
 import subprocess
 import datetime
 import getpass
+import pandas as pd
+import os
+
+
 
 # Getting global variables
 config_path = "c:\\Josh\\config.txt"
@@ -397,10 +401,35 @@ def CreateBarcodes():
 
 # Lets the GUI interact with Windows explorer and select the daily float snapshot for the use of the program.
 def open_file_dialog():
-    file_path = filedialog.askopenfilename(title="Select a File", filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")])
-    if file_path:
-        count_label.config(text=f"Selected File: {file_path}")
-        process_file(file_path)
+    file_paths = filedialog.askopenfilenames(
+        title="Select Excel Files to Combine",
+        filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")]
+    )
+
+    if not file_paths:
+        print("No files selected.")
+        return
+
+    # Initialize an empty list to store DataFrames
+    excel_lst = []
+    for file in file_paths:
+        excel_lst.append(pd.read_excel(file))
+
+    # Combine all DataFrames into one
+    excel_merged = pd.concat(excel_lst, ignore_index=True)
+
+    # Export the combined DataFrame to a new Excel file
+    output_file = 'DailyCombinedCTR.xlsx'
+    excel_merged.to_excel(output_file, index=False)
+    print(f"Combined Excel file saved as '{output_file}'.")
+    final_path = filedialog.askopenfilename(
+        title="Select Excel File to use",
+        filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")]
+    )
+    if not final_path:
+        print("No files selected.")
+        return
+    process_file(final_path)
 
 # Using Filepath (the location of the chosen excel) if the file passes being possible, The first sheet in the workbook becomes our selection.
 def process_file(file_path):
@@ -423,20 +452,25 @@ def process_sheet(sheet):
     # Contractors and corresponding lists
     robitaille_lst = ['8017', '8037', '8038', '8041', '8047', '8080', '8093']
     ctr_lst = ['8052', '8067', '8975', "8986", "8990", "8994", "8997"]
+    warehouse_lst = ["NB1", "NF1"]
 
     # Devices to count for each group
     robitaille_devices = [
         "XB8", "XB7", "XI6", "XIONE", "PODS", "ONTS",
-        "SCHB1AEW", "SCHC2AEW", "SCHC3AEW", "XIONE - ENTOS",
+        "SCHB1AEW", "SCHC2AEW", "SCHC3AEW", "SCXI11BEI-ENTOS",
         "MR36HW", "S5A134A", "CM8200A", "CODA5810"
     ]
     
     ctr_devices = [
         "XB8", "XB7", "XI6", "XIONE", "PODS", "ONTS",
-        "SCHB1AEW", "SCHC2AEW", "SCHC3AEW", "XIONE - ENTOS",
+        "SCHB1AEW", "SCHC2AEW", "SCHC3AEW", "SCXI11BEI-ENTOS",
         "CODA5810"
     ]
-
+    warehouse_devices = [
+        "XB8", "XB7", "XI6", "XIONE", "PODS", "ONTS",
+        "SCHB1AEW", "SCHC2AEW", "SCHC3AEW", "SCXI11BEI-ENTOS",
+        "MR36HW", "S5A134A", "CM8200A", "CODA5810"
+    ]
     # Map item codes to device names
     device_mapping = {
         "CGM4981COM": "XB8",
@@ -448,6 +482,7 @@ def process_sheet(sheet):
         "SCHB1AEW": "SCHB1AEW",
         "SCHC2AEW": "SCHC2AEW",
         "SCHC3AE0": "SCHC3AEW",
+        "SCXI11BEI-ENTOS": "SCXI11BEI-ENTOS",
         "MR36HW": "MR36HW",
         "S5A134A": "S5A134A",
         "CM8200A": "CM8200A",
@@ -501,6 +536,20 @@ def process_sheet(sheet):
             update_totals(combined_contractor_totals, item_code, ctr_devices)
 
     data_lst.append(format_totals(combined_contractor_totals, ctr_devices))
+
+    for warehouse in warehouse_lst:
+        warehouse_totals = {device: 0 for device in warehouse_devices}
+        for row in sheet.iter_rows(min_row=3, max_row=sheet.max_row):
+            contractor_id = str(row[1].value)  # Column B
+            item_code = row[5].value          # Column F
+            inventory_type = str(row[9].value)  # Column J
+
+            if contractor_id == warehouse:
+                update_totals(warehouse_totals, item_code, warehouse_devices)
+
+        data_lst.append(format_totals(warehouse_totals, warehouse_devices))
+
+
 
     # Copy data to Excel with contractor/device names (order will be respected)
     full_list = robitaille_lst + ctr_lst  # Respect the order
@@ -572,6 +621,10 @@ def open_xml_file():
     else:
         messagebox.showwarning("No file selected", "Please select a valid XML file.")
         return None
+
+
+
+
 
 # GUI
 OUTPUT_PATH = Path(__file__).parent
