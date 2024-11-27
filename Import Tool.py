@@ -1,3 +1,7 @@
+#==============================================================================#
+# Fundamentals #
+#==============================================================================#
+
 # Imports
 from pathlib import Path
 from tkinter import Tk, Canvas, Entry, Text, Button, PhotoImage
@@ -19,9 +23,10 @@ import subprocess
 import datetime
 import getpass
 import pandas as pd
-import os
-
-
+import pyodbc
+import subprocess
+import datetime
+import getpass
 
 # Getting global variables
 config_path = "c:\\Josh\\config.txt"
@@ -41,12 +46,17 @@ file_path = None
 error_serial = []
 good_serial = []
 
-# Bom-Wip Helper
+# WANT TO REMOVE THIS OR AT LEAST UPDATE IT TO A FIREBASE THING
+connection_string = r'DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=' + database_path
+
+# Formats
 def RelativeToAssets(path: str) -> Path:
     return ASSETS_PATH / Path(path)
+
+#  Lets you select an excel and then loads the serials for use.
 def OpenExcel():
     global file_path
-    file_path = filedialog.askopenfilename(title="Select a File", filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")])
+    file_path = filedialog.askopenfilename(title="Open an Excel for use", filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")])
     if file_path:
         LoadSerials(file_path)
     
@@ -54,33 +64,35 @@ def OpenExcel():
 def LoadSerials(file_path):
     global serials_list, remaining_serials
     try:
-        # Opens the Excel, loads at the active sheet and clears the serials previously loaded if any.
+        # loads at the active sheet 
         wb = openpyxl.load_workbook(file_path)
         sheet = wb.active
-        serials_list.clear()
+        serials_list.clear() #clears the serials previously loaded if any.
+        
         # Gets every serial in the first column and adds it into the serial list.
         for row in sheet.iter_rows(min_row=1, max_row=sheet.max_row):
             if row[0].value is not None:
                 serials_list.append(str(row[0].value))
-        # Gets the amount of serials loaded and updates the display with the function.
+
+        # Gets the amount of serials loaded and updates the display with the function.  
         remaining_serials = len(serials_list)
         if serials_reversed == True:
             serials_list.reverse() # Reverse the serials to account for FlexiPro!
         UpdateSerialsDisplay()
+
     # If serials are not able to be loaded by the file, this handles the error.
     except Exception as e:
         messagebox.showerror("Error", f"Failed to load serials: {e}")
 
+# Configures the text to let the user know how many serials are loaded.
 def UpdateSerialsDisplay():
     serials_text.delete(1.0, tk.END)
     serials_text.insert(tk.END, "\n".join(serials_list))
     count_label.config(text=f"{remaining_serials} Serials Loaded")
 
-# Deletes all serials in the display and then puts the new ones in seperating them by new lines and updates the GUI of the serial amounts.
-def UpdateSerialsDisplay():
-    serials_text.delete(1.0, tk.END)
-    serials_text.insert(tk.END, "\n".join(serials_list))
-    count_label.config(text=f"{remaining_serials} Serials Loaded")
+#==============================================================================#
+# Import Stuff #
+#==============================================================================#
 
 # Helper function for PasteSerials now as FlexiPro requires you to wait for a loading bar to complete.
 def CheckPixelFlexiPro():
@@ -88,22 +100,22 @@ def CheckPixelFlexiPro():
         colorPixel = (flexLocal.getpixel((961,1016))) # Gets the color of the loading bar in that screenshot
         whitepixel = (250, 250, 250) # This is the color of the loading bar when you are able to import a new serial. As such it is the target.
         if colorPixel != whitepixel: 
-            # If the pixel found is not the color of the target set, then we return false with a statement of what we found, this will make the loop run again in PasteSerials.
-            print("Holding serial as loading does not appear done. Color: " + str(flexLocal.getpixel((961,1016))))
+            # If the pixel found is not the color of the target set, then we return false.
             return False
         else: 
-            # If we got the target pixel from our check it will return the color to assure you it went through and make PasteSerials exit the loop.
-             print("Looking good, color is: " + str(flexLocal.getpixel((961,1016))))
+            # If we got the target pixel from our check it will return true.
              return True
+        
+# Helper function for PasteSerials now as WMS sometimes creates errors.
 def CheckPixelWMS():
         flexLocal = pyautogui.screenshot() # Takes a screenshot of the lower screen
         colorPixel = (flexLocal.getpixel((30,149))) # Gets the color of the loading bar in that screenshot
         errorColor = (255, 255, 255) # This is the color of the loading bar when you are able to import a new serial. As such it is the target.
         goodColor = (0, 0, 0)
         if colorPixel == errorColor:
-            return True
+            return True # If there is an error we return True for "isError"
         elif colorPixel == goodColor:
-             return False
+             return False # If there is not an error we return False for "isError"
         
 # Pastes the serials automatically for WMS.
 def PasteSerialsWMS():
@@ -112,31 +124,37 @@ def PasteSerialsWMS():
     if not serials_list:
         messagebox.showinfo("Info", "No serials loaded to paste.")
         return
+    
     # Allows time for the user to focus on the target program
     time.sleep(5)  
     start = time.time() # This is the start of the timer for the import time.
-    error_serial = []
-    good_serial = []
+
+    # Lists for filtering the serials.
+    error_serial = [] # Stores the serials that were not able to be imported.
+    good_serial = [] # Stores the serials that were able to be imported.
+    
     for serial in serials_list[:]:
         if serial is not None:
-            
             pyautogui.typewrite(serial) # Writes the serial.
-            time.sleep(0.5)
+            time.sleep(0.2) # WAS 0.5 BUT TRYING TO SPEED IT UP
             pyautogui.hotkey("tab") # Waits before pressing tab as to give the system a short breather.
             serials_list.remove(serial)
             remaining_serials -= 1
             UpdateSerialsDisplay()
-            time.sleep(1)
+            time.sleep(0.4) # WAS 1 BUT TRYING TO SPEED IT UP
+            
             isError = CheckPixelWMS() # returns t/f
+
             if isError == False: # If there is no error, you can continue pasting. After sorting the serial
                 print(str(serial) + " Has no error!")
                 good_serial.append(serial)
             elif isError == True: # If there is an error you need to wait for the box to update, press ctrl + x and save the serial
                 error_serial.append(serial)
-                time.sleep(0.75)
-                pyautogui.hotkey("ctrl", "x")
+                time.sleep(0.4) # WAS 0.75 BUT TRYING TO SPEED UP
+                pyautogui.hotkey("ctrl", "x") # Gets out of the error screen
                 print(str(serial) + " Had an error and will be saved")
-            time.sleep(0.5)
+            time.sleep(0.3) # WAS 0.5 BUT WANT TO SPEED IT UP.
+
     end = time.time() # Serials are all imported and as such we grab the ended time.
     
     # Prints the time the import took into the console
@@ -146,21 +164,25 @@ def PasteSerialsWMS():
     print("The good serials are:")
     for j in good_serial:
         print(j)
+    
     # Prints the serials that did have errors
     print("The problematic serials are:")
     for i in (error_serial):
         print(i)
     
-
+# Pastes the serials automatically for FlexiPro.
 def PasteSerialsFlexi():
     global remaining_serials
+
     # Handles if there are no serials in our serial list.
     if not serials_list:
         messagebox.showinfo("Info", "No serials loaded to paste.")
         return
+    
     # Allows time for the user to focus on the target program
     time.sleep(5)  
     start = time.time() # This is the start of the timer for the import time.
+
     for serial in serials_list[:]:
         if serial is not None:
             isPixelGood = CheckPixelFlexiPro()
@@ -176,6 +198,7 @@ def PasteSerialsFlexi():
                 UpdateSerialsDisplay()
                 # Time between pastes, ideally rounded down as much as possible but FlexiPro is hard to estimate, you can customize this in the config.
                 time.sleep(import_speed)
+
             # Shouldn't be possible to hit this else, but if it does happen, I aired on the side of not losing the serial and instead warning the user that some edge case was found.
             else: # Same as if true except has warning.
                 print("Check the import for" + str(serial))
@@ -187,9 +210,11 @@ def PasteSerialsFlexi():
                 remaining_serials -= 1
                 UpdateSerialsDisplay()
                 time.sleep(import_speed)
+
     end = time.time() # Serials are all imported and as such we grab the ended time.
     print('Import completed in ' + str(round((end - start) / 60, 1)) + " minutes.") # Prints to the console how long the import took in mins
 
+# Pastes the serials as fast as possible
 def PasteSerialsNormal():
     global remaining_serials
     # Handles if there are no serials in our serial list.
@@ -199,6 +224,7 @@ def PasteSerialsNormal():
     # Allows time for the user to focus on the target program
     time.sleep(5)  
     start = time.time() # This is the start of the timer for the import time.
+
     for serial in serials_list[:]:
         if serial is not None:    
                 pyautogui.typewrite(serial) # Writes the serial.
@@ -208,9 +234,13 @@ def PasteSerialsNormal():
                 UpdateSerialsDisplay()
                 # Time between pastes, ideally rounded down as much as possible but FlexiPro is hard to estimate, you can customize this in the config.
                 time.sleep(0.3)
+
     end = time.time() # Serials are all imported and as such we grab the ended time.
     print('Import completed in ' + str(round((end - start) / 60, 1)) + " minutes.") # Prints to the console how long
 
+#==============================================================================#
+# Printing #
+#==============================================================================#
 
 # Formats TV devices by reversing every 10 serials and adding the found device name to the top.
 def MakeTVSheet(device):
@@ -234,6 +264,7 @@ def ReverseForModems():
         reversed_modems.extend(chunk)
     return reversed_modems
 
+# Formats Modem devices by reversing every 8 serials and adding the found device name to the top.
 def MakeModemSheet(device):
     working_modems = ReverseForModems()
     total_strings = len(serials_list)
@@ -245,6 +276,7 @@ def MakeModemSheet(device):
         formatted_list.extend(chunk)
 
     return '\n'.join(formatted_list)
+
 # Takes the formatted string for the sheets, and executes a BAT file depending on the device that is found.
 def CreatePurolatorSheet():
     global serials_list
@@ -280,7 +312,6 @@ def CreatePurolatorSheet():
         # Updates the TEMP BAT and then executes it.
         with open("temp_cmd.bat", "w") as bat_file:
             bat_file.write(cmd_script)
-
         subprocess.run(["cmd.exe", "/c", "temp_cmd.bat"])
     
     # If a device is a Modem device it will create the text file and execute a BAT file using it.
@@ -299,20 +330,9 @@ def CreatePurolatorSheet():
         # Updates the TEMP BAT and then executes it.
         with open("temp_cmd.bat", "w") as bat_file:
             bat_file.write(cmd_script)
-
         subprocess.run(["cmd.exe", "/c", "temp_cmd.bat"])
 
-
-import pyodbc
-import subprocess
-import datetime
-import getpass
-
-# Define the database path and connection string
-
-connection_string = r'DRIVER={Microsoft Access Driver (*.mdb, *.accdb)};DBQ=' + database_path
-
-
+# Creates a Lot sheet based on the loaded serials.
 def CreateLaser():
     # Create the barcode file for Bartender
     with open(bartender_notepad, 'w') as file:
@@ -333,8 +353,7 @@ def CreateLaser():
     # Run the script to print barcodes
     subprocess.run(["cmd.exe", "/c", "temp_cmd.bat"])
 
-
-
+# Prints the loaded serials as barcodes.
 def CreateBarcodes():
     # Create the barcode file for Bartender
     with open(bartender_notepad, 'w') as file:
@@ -355,57 +374,18 @@ def CreateBarcodes():
     # Run the script to print barcodes
     subprocess.run(["cmd.exe", "/c", "temp_cmd.bat"])
 
-    # Log the data into the Access database
-    try:
-        # Get the current date and the username of the person running the script
-        current_date = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        user = getpass.getuser()
+#==============================================================================#
+# CTR Update Stuff #
+#==============================================================================#
 
-        print("Connecting to the database...")
-        conn = pyodbc.connect(connection_string)
-        cursor = conn.cursor()
-
-        # Insert the user, date, and each serial into the database
-        for serial in serials_list:
-            if len(serial) >= 2 and serial[0] == "T" and serial[1] == "M":
-              device = "XI6"
-            elif len(serial) >= 1 and serial[0] == "M":
-                device = "XI6"
-            elif len(serial) >= 3 and serial[0] == "4" and serial[1] == "0" and serial[2] == "9":
-                device = "XB8"
-            elif len(serial) >= 3 and serial[0] == "X" and serial[1] == "I" and serial[2] == "1":
-                device = "XIONE"
-            elif len(serial) >= 3 and serial[0] == "3" and serial[1] == "3" and serial[2] == "6":
-                device = "XB7"
-            elif len(serial) >= 2 and serial[0] == "A" and serial[1] == "S":
-                device = "POD"
-            else:
-                device = "XB7"
-            print(f"Inserting: DateLogged={current_date}, User={user}, SerialNumber={serial}, Device={device}")
-            cursor.execute(
-                "INSERT INTO Barcodes (DateLogged, User, SerialNumber, Device) VALUES (?, ?, ?, ?)",
-                (current_date, user, serial, device)
-            )
-
-        # Commit the transaction and close the connection
-        conn.commit()
-        print("Data committed to the database.")
-        cursor.close()
-        conn.close()
-        print("Connection closed.")
-    
-    except Exception as e:
-        print(f"Error logging data to database: {e}")
-
-# CTR Update Tool:
-
-# Lets the GUI interact with Windows explorer and select the daily float snapshot for the use of the program.
+# Lets the GUI interact with Windows explorer and select the daily float snapshots for the use of the program.
 def open_file_dialog():
+    # Selects Multiple files to combine
     file_paths = filedialog.askopenfilenames(
         title="Select Excel Files to Combine",
         filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")]
     )
-
+    # Handles no selection
     if not file_paths:
         print("No files selected.")
         return
@@ -418,10 +398,12 @@ def open_file_dialog():
     # Combine all DataFrames into one
     excel_merged = pd.concat(excel_lst, ignore_index=True)
 
-    # Export the combined DataFrame to a new Excel file
+    # Exports the combined DataFrame to a new Excel file
     output_file = 'DailyCombinedCTR.xlsx'
     excel_merged.to_excel(output_file, index=False)
     print(f"Combined Excel file saved as '{output_file}'.")
+    
+    # Asks for the file we created for use of the import.
     final_path = filedialog.askopenfilename(
         title="Select Excel File to use",
         filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")]
@@ -429,6 +411,7 @@ def open_file_dialog():
     if not final_path:
         print("No files selected.")
         return
+    # Begin import with the file
     process_file(final_path)
 
 # Using Filepath (the location of the chosen excel) if the file passes being possible, The first sheet in the workbook becomes our selection.
@@ -440,19 +423,14 @@ def process_file(file_path):
     except Exception as e:
         count_label.config(text=f"Error: {str(e)}")
 
-# Updated list of devices for CTR contractors
-ctr_devices = [
-    "XB8", "XB7", "XI6", "XIONE", "PODS", "ONTS",
-    "SCHB1AEW", "SCHC2AEW", "SCHC3AEW", "XIONE - ENTOS",
-    "CODA5810"  # Added CODA5810 for CTR contractors
-]
-
-# Main algorithmic processing for the program
+# Main algorithmic processing for the update
 def process_sheet(sheet):
-    # Contractors and corresponding lists
+    # Contractors, Robitaille, and Warehouse titles.
     robitaille_lst = ['8017', '8037', '8038', '8041', '8047', '8080', '8093']
     ctr_lst = ['8052', '8067', '8975', "8986", "8990", "8994", "8997"]
     warehouse_lst = ["NB1", "NF1"]
+    
+    data_lst = [] # Result List
 
     # Devices to count for each group
     robitaille_devices = [
@@ -471,6 +449,7 @@ def process_sheet(sheet):
         "SCHB1AEW", "SCHC2AEW", "SCHC3AEW", "SCXI11BEI-ENTOS",
         "MR36HW", "S5A134A", "CM8200A", "CODA5810"
     ]
+
     # Map item codes to device names
     device_mapping = {
         "CGM4981COM": "XB8",
@@ -488,9 +467,6 @@ def process_sheet(sheet):
         "CM8200A": "CM8200A",
         "CODA5810": "CODA5810",
     }
-
-    # Result list
-    data_lst = []
 
     # Helper function to update totals based on the allowed device list
     def update_totals(totals, item_code, allowed_devices):
@@ -512,7 +488,7 @@ def process_sheet(sheet):
 
         data_lst.append(format_totals(contractor_totals, robitaille_devices))
 
-    # Process CTR contractors (order as per your request)
+    # Process CTR contractors 
     for contractor in ctr_lst:
         contractor_totals = {device: 0 for device in ctr_devices}
         for row in sheet.iter_rows(min_row=3, max_row=sheet.max_row):
@@ -537,6 +513,7 @@ def process_sheet(sheet):
 
     data_lst.append(format_totals(combined_contractor_totals, ctr_devices))
 
+    # Get data for Warehouses
     for warehouse in warehouse_lst:
         warehouse_totals = {device: 0 for device in warehouse_devices}
         for row in sheet.iter_rows(min_row=3, max_row=sheet.max_row):
@@ -560,24 +537,19 @@ def process_sheet(sheet):
 def format_totals(totals, device_order):
     return '\n'.join(str(totals[device]) for device in device_order)
 
+#Supposed to rearrange the list but I dont think it does.
 def rearrange_lst(full_list, combined_contractor_totals):
-    # Manually adjust the order of contractors and totals as per your specification
     # Insert the combined contractor totals at the end
     full_list.append(combined_contractor_totals)
 
-    # Example of rearranging list to fit specific order (inserting combined totals into particular positions)
-    # Let's assume you want to insert specific contractor totals at specific places
-
-    # Insert the contractor totals at these positions:
+    # Dont even think this works or is importants...
     full_list.insert(5, full_list[7])
     full_list.insert(6, full_list[8])
     full_list.insert(12, full_list[14])
 
     return full_list
 
-
-
-# Copy data to Excel
+# Copies data to Excel based on all data gathered and helps navigate.
 def copy_data_to_excel(data_lst, full_list):
     for index, data in enumerate(data_lst):
         clipboard.copy(data)
@@ -587,7 +559,7 @@ def copy_data_to_excel(data_lst, full_list):
             pyautogui.hotkey("ctrl", "alt", "pagedown")
             pyautogui.hotkey('ctrl','left')
 
-# XML Converter
+# Converts XML files to serials
 def open_xml_file():
     # Open a file dialog to choose the XML file
     file_path = filedialog.askopenfilename(
@@ -622,21 +594,18 @@ def open_xml_file():
         messagebox.showwarning("No file selected", "Please select a valid XML file.")
         return None
 
+#==============================================================================#
+# GUI #
+#==============================================================================#
 
-
-
-
-# GUI
 OUTPUT_PATH = Path(__file__).parent
 ASSETS_PATH = OUTPUT_PATH / Path(f"{asset_location}")
-
-
 def relative_to_assets(path: str) -> Path:
     return ASSETS_PATH / Path(path)
 
 
 window = Tk()
-window.title("Rogers Toolbox")
+window.title("Rogers Toolbox 2.3")
 window.geometry("600x350")
 window.configure(bg = "#FFFFFF")
 
