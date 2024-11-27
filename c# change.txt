@@ -1,0 +1,165 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Windows;
+using System.Windows.Controls;
+using Microsoft.Win32;
+using ClosedXML.Excel;
+
+namespace Rogers_Toolbox_v3._0
+{
+    public partial class MainWindow : Window
+    {
+        private List<string> serialsList = new List<string>(); // List to hold serials
+        private int remainingSerials; // Count of remaining serials
+
+        public MainWindow()
+        {
+            InitializeComponent();
+        }
+
+        private void CombineExcels()
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog
+            {
+                Title = "Select Excel Files to Combine",
+                Filter = "Excel files (*.xlsx)|*.xlsx|All files (*.*)|*.*",
+                Multiselect = true
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                var filePaths = openFileDialog.FileNames;
+                try
+                {
+                    CombineExcelFiles(filePaths);
+                }
+                catch (Exception ex)
+                {
+                    MessageBox.Show($"Failed to combine files: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+            }
+        }
+
+        private void CombineExcelFiles(string[] filePaths)
+        {
+            var combinedWorkbook = new XLWorkbook();
+            var combinedWorksheet = combinedWorkbook.Worksheets.Add("Combined");
+
+            int currentRow = 1;
+
+            foreach (var filePath in filePaths)
+            {
+                using (var workbook = new XLWorkbook(filePath))
+                {
+                    var worksheet = workbook.Worksheet(1); // Use the first worksheet
+                    var rows = worksheet.RowsUsed();
+
+                    foreach (var row in rows)
+                    {
+                        var values = row.Cells().Select(cell => cell.GetValue<string>()).ToArray();
+                        for (int col = 0; col < values.Length; col++)
+                        {
+                            combinedWorksheet.Cell(currentRow, col + 1).Value = values[col];
+                        }
+
+                        currentRow++;
+                    }
+                }
+            }
+
+            var saveFileDialog = new SaveFileDialog
+            {
+                Title = "Save Combined Excel File",
+                Filter = "Excel files (*.xlsx)|*.xlsx",
+                FileName = "CombinedFile.xlsx"
+            };
+
+            if (saveFileDialog.ShowDialog() == true)
+            {
+                combinedWorkbook.SaveAs(saveFileDialog.FileName);
+                MessageBox.Show("Combined Excel file saved successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+
+        private void CTRUpdate()
+        {
+            OpenFileDialog openFileDialog = new OpenFileDialog
+            {
+                Title = "Select Excel File for CTR Update",
+                Filter = "Excel files (*.xlsx)|*.xlsx|All files (*.*)|*.*"
+            };
+
+            if (openFileDialog.ShowDialog() == true)
+            {
+                var filePath = openFileDialog.FileName;
+                ProcessCTRUpdate(filePath);
+            }
+        }
+
+        private void ProcessCTRUpdate(string filePath)
+        {
+            try
+            {
+                using (var workbook = new XLWorkbook(filePath))
+                {
+                    var sheet = workbook.Worksheet(1); // Process the first sheet
+                    var results = AnalyzeSheet(sheet);
+
+                    // Output results to a new file
+                    SaveCTRResults(results);
+                }
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show($"Failed to process CTR update: {ex.Message}", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+            }
+        }
+
+        private List<string> AnalyzeSheet(IXLWorksheet sheet)
+        {
+            var results = new List<string>();
+            var robitailleList = new List<string> { "8017", "8037", "8038", "8041", "8047", "8080", "8093" };
+            var deviceMapping = new Dictionary<string, string>
+            {
+                {"CGM4981COM", "XB8"},
+                {"CGM4331COM", "XB7"},
+                {"TG4482A", "XB7"},
+                {"IPTVARXI6HD", "XI6"},
+                {"IPTVTCXI6HD", "XI6"}
+                // Add more mappings as needed
+            };
+
+            foreach (var row in sheet.RowsUsed().Skip(2)) // Skip header rows
+            {
+                var contractorId = row.Cell(8).GetValue<string>(); // Column H
+                var itemCode = row.Cell(6).GetValue<string>();     // Column F
+
+                if (robitailleList.Contains(contractorId) && deviceMapping.ContainsKey(itemCode))
+                {
+                    var deviceName = deviceMapping[itemCode];
+                    results.Add($"Contractor: {contractorId}, Device: {deviceName}");
+                }
+            }
+
+            return results;
+        }
+
+        private void SaveCTRResults(List<string> results)
+        {
+            var saveFileDialog = new SaveFileDialog
+            {
+                Title = "Save CTR Results",
+                Filter = "Text files (*.txt)|*.txt",
+                FileName = "CTRResults.txt"
+            };
+
+            if (saveFileDialog.ShowDialog() == true)
+            {
+                File.WriteAllLines(saveFileDialog.FileName, results);
+                MessageBox.Show("CTR results saved successfully.", "Success", MessageBoxButton.OK, MessageBoxImage.Information);
+            }
+        }
+    }
+}
