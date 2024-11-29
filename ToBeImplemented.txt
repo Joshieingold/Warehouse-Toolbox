@@ -33,3 +33,7 @@ To do:
 	- Serials? maybe not tho.
 - Make compare two lists button:
 - Make serials formatter tool that takes from the text-box
+
+- Make installer
+- Make Auto Updater
+- Remove blue highlight on the buttons.
