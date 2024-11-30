@@ -1,14 +1,6 @@
 
 To do:
 
-- Make a settings window:
-	- Contains:
-		x User? = string system.user
-		x Import Speed (blitz) = int
-		x Import Speed (flexi) = int
-		x Import Speed (wms): = int
-		x path to bartender notepad: = string Path
-		x reverse imported serials = boolean
 - Make Flexipro Import(serial_lst
 	- for serial in serial_lst
 	
@@ -20,11 +12,7 @@ To do:
 		- make function for printing the serial (print serial
 - Make WMS import
 	- same as flexipro except make two lists before hand then make two windows appear when all done.
-
-- Make create laser 
-
 - Make xml scrape tool and display serials in the textbox
-
 - Make it when bom-wip == True, pushes to database.
 	- Device
 		- Make function to determine device
@@ -33,7 +21,20 @@ To do:
 	- Serials? maybe not tho.
 - Make compare two lists button:
 - Make serials formatter tool that takes from the text-box
-- Make Reverse Serals function
 - Make installer
 - Make Auto Updater
-- Remove blue highlight on the buttons.
+
+
+
+Completed
+x Remove blue highlight on the buttons.
+x Make Reverse Serials function
+x Make create laser 
+x Make Barcode Print
+X Make settings Options:
+	x User? = string system.user
+	x Import Speed (blitz) = int
+	x Import Speed (flexi) = int
+	x Import Speed (wms): = int
+	x path to bartender notepad: = string Path
+	x reverse imported serials = boolean
