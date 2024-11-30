@@ -3,12 +3,12 @@ To do:
 
 - Make a settings window:
 	- Contains:
-		- User? = string system.user
-		- Import Speed (blitz) = int
-		- Import Speed (flexi) = int
-		- Import Speed (wms): = int
-		- path to bartender notepad: = string Path
-		- reverse imported serials = boolean
+		x User? = string system.user
+		x Import Speed (blitz) = int
+		x Import Speed (flexi) = int
+		x Import Speed (wms): = int
+		x path to bartender notepad: = string Path
+		x reverse imported serials = boolean
 - Make Flexipro Import(serial_lst
 	- for serial in serial_lst
 	
@@ -33,7 +33,7 @@ To do:
 	- Serials? maybe not tho.
 - Make compare two lists button:
 - Make serials formatter tool that takes from the text-box
-
+- Make Reverse Serals function
 - Make installer
 - Make Auto Updater
 - Remove blue highlight on the buttons.
