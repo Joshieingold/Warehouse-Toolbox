@@ -10,6 +10,8 @@ To do:
 	- Serials? maybe not tho.
 
 - Make serials formatter tool that takes from the text-box
+- Make outside label generator window.
+
 - Make installer
 - Make Auto Updater
 
