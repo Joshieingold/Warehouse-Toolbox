@@ -1,17 +1,6 @@
 
 To do:
 
-- Make Flexipro Import(serial_lst
-	- for serial in serial_lst
-	
-		** Check pixels master function:
-			(Takes in two perameters pixel we want and pixel we got)
-				(return px1 == px2)
-		- do checkPixels
-			 while (checkPixels == False
-		- make function for printing the serial (print serial
-- Make WMS import
-	- same as flexipro except make two lists before hand then make two windows appear when all done.
 - Make xml scrape tool and display serials in the textbox
 - Make it when bom-wip == True, pushes to database.
 	- Device
@@ -25,8 +14,9 @@ To do:
 - Make Auto Updater
 
 
-
+======================================================
 Completed
+======================================================
 x Remove blue highlight on the buttons.
 x Make Reverse Serials function
 x Make create laser 
@@ -40,3 +30,7 @@ X Make settings Options:
 	x reverse imported serials = boolean
 X Make settings Window that works.
 X Make compare two lists button:
+x Make Flexipro Import(serial_lst)
+x Make WMS import
+	x same as flexipro except make two lists before hand then make two windows appear when all done.
+x Check pixels master function:
