@@ -38,3 +38,4 @@ X Make settings Options:
 	x Import Speed (wms): = int
 	x path to bartender notepad: = string Path
 	x reverse imported serials = boolean
+X Make settings Window that works.
