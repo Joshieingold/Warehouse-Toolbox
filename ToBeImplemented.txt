@@ -9,7 +9,7 @@ To do:
 	- Quantity
 	- Serials? maybe not tho.
 
-- Make serials formatter tool that takes from the text-box
+
 - Make outside label generator window.
 
 
@@ -37,3 +37,4 @@ x Make WMS import
 	x same as flexipro except make two lists before hand then make two windows appear when all done.
 x Check pixels master function:
 X Make installer
+X Make serials formatter tool that takes from the text-box
