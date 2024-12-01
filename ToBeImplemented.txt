@@ -19,7 +19,7 @@ To do:
 	- Name
 	- Quantity
 	- Serials? maybe not tho.
-- Make compare two lists button:
+
 - Make serials formatter tool that takes from the text-box
 - Make installer
 - Make Auto Updater
@@ -39,3 +39,4 @@ X Make settings Options:
 	x path to bartender notepad: = string Path
 	x reverse imported serials = boolean
 X Make settings Window that works.
+X Make compare two lists button:
