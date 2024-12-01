@@ -1,7 +1,6 @@
 
 To do:
 
-- Make xml scrape tool and display serials in the textbox
 - Make it when bom-wip == True, pushes to database.
 	- Device
 		- Make function to determine device
