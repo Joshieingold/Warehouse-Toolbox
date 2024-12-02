@@ -12,6 +12,7 @@ Fixes:
 New:
  - Make option to import the CTR data at the speed you would like.
  - Update Icons
+- Importing needs a hault condition
 
 
 - Make outside label generator window.
