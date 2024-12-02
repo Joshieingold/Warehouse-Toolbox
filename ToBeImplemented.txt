@@ -21,7 +21,7 @@ New:
 
 - Make outside label generator window.
 
-- Make it so software isnt always locked to computer
+- Make it so software isnt always locked to upload computer
 - Make Auto Updater
 
 
