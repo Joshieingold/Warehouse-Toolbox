@@ -1,18 +1,23 @@
 
 To do:
 
-- Make it when bom-wip == True, pushes to database.
-	- Device
-		- Make function to determine device
-	- Name
-	- Quantity
-	- Serials? maybe not tho.
+Fixes:
+ - App Crashes after Flexi-Import, likely due to not be able to establish a connection to the database.
+ - App crashes when trying to load the database.
+ - CTR update does not give time in between Ctr's to select the day.
+ - Flexi-Import-Speed should be at a default of 700
+ - WMS import needs to wait a second after it encounters an error and hold the next serial.
+ - The print functions should get their data from the textbox not serial_lst
+ - The default path to barcode should be C:\\BTAutomation\\barcodes.txt
+New:
+ - Make option to import the CTR data at the speed you would like.
+ - Update Icons
 
 
 - Make outside label generator window.
 
-
-?X? Make Auto Updater
+- Make it so software isnt always locked to computer
+- Make Auto Updater
 
 
 ======================================================
@@ -37,3 +42,7 @@ x Make WMS import
 x Check pixels master function:
 X Make installer
 X Make serials formatter tool that takes from the text-box
+X Make database:
+	x Sends User
+	X sends device type
+	X sends quantity
