@@ -9,10 +9,14 @@ Fixes:
  - WMS import needs to wait a second after it encounters an error and hold the next serial.
  - The print functions should get their data from the textbox not serial_lst
  - The default path to barcode should be C:\\BTAutomation\\barcodes.txt
+ - Settings should apply right after save.
 New:
  - Make option to import the CTR data at the speed you would like.
  - Update Icons
-- Importing needs a hault condition
+ - Importing needs a hault condition
+ - Needs to display time elapsed 
+ - Add ICO image 
+ - 
 
 
 - Make outside label generator window.
