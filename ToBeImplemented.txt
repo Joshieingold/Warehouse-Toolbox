@@ -16,7 +16,7 @@ New:
  - Importing needs a hault condition
  - Needs to display time elapsed 
  - Add ICO image 
- - 
+ - Make the Textbar update saying which serial is being processed for the imports.
 
 
 - Make outside label generator window.
