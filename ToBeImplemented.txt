@@ -17,10 +17,11 @@ New:
  - Needs to display time elapsed 
  - Add ICO image 
  - Make the Textbar update saying which serial is being processed for the imports.
-- Make outside label generator window.
-- Make it so software isnt always locked to upload computer
-- Make Auto Updater
-- Make label after import say the elapsed time for the import.
+ - Make outside label generator window.
+ - Make it so software isnt always locked to upload computer
+ - Make Auto Updater
+ - Make label after import say the elapsed time for the import.
+ - Make CTR Lists adjustable in the settings menu.
 
 
 ======================================================
