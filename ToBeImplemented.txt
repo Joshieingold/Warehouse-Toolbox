@@ -20,6 +20,7 @@ New:
 - Make outside label generator window.
 - Make it so software isnt always locked to upload computer
 - Make Auto Updater
+- Make label after import say the elapsed time for the import.
 
 
 ======================================================
