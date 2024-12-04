@@ -1,18 +1,17 @@
-
+======================================================
 To do:
+======================================================
 
 Fixes:
  - App Crashes after Flexi-Import, likely due to not be able to establish a connection to the database.
  - App crashes when trying to load the database.
- - CTR update does not give time in between Ctr's to select the day.
- - Flexi-Import-Speed should be at a default of 700
+ x CTR update does not give time in between Ctr's to select the day.
  - WMS import needs to wait a second after it encounters an error and hold the next serial.
  - The print functions should get their data from the textbox not serial_lst
- - The default path to barcode should be C:\\BTAutomation\\barcodes.txt
  - Settings should apply right after save.
+
 New:
- - Make option to import the CTR data at the speed you would like.
- - Update Icons
+
  - Importing needs a hault condition
  - Needs to display time elapsed 
  - Add ICO image 
@@ -46,7 +45,11 @@ x Make WMS import
 x Check pixels master function:
 X Make installer
 X Make serials formatter tool that takes from the text-box
+X Flexi-Import-Speed should be at a default of 700
 X Make database:
 	x Sends User
 	X sends device type
 	X sends quantity
+ X Update Icons
+ X The default path to barcode should be C:\\BTAutomation\\barcodes.txt
+ X Make option to import the CTR data at the speed you would like.
