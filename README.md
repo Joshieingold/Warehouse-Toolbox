@@ -1,5 +1,6 @@
 <h1>Warehouse Toolbox</h1>
 <h3>Welcome to the Warehouse Toolbox! A tool designed for making specific tasks for a warehouse administrator more streamlined.</h3>
+<h3>Outdated, new version is available named Rogers Toolbox 3.0 </h3>
 
 <h1>Features</h1>
 <p>Check to see if any of these functions would be helpful for you.</p>
